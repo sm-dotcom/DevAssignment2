@@ -1,3 +1,8 @@
+# Install Ansible on your machine using Linux Bash Script
+# nano install-ansible.sh
+# chmod +x install-ansible.sh
+
+
 #!/bin/bash
 
 # Detect Linux distribution

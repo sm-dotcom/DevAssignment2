@@ -1,0 +1,79 @@
+# Create an Ansible playbook that installs Docker and Docker-Compose on your local machine
+# ansible-playbook install-docker.yml --ask-become-pass command
+
+---
+- name: Install Docker and Docker Compose
+  hosts: localhost
+  become: yes  # Run tasks as sudo
+  tasks:
+
+    - name: Update package lists (Ubuntu/Debian)
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install dependencies
+      apt:
+        name: 
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker
+      apt:
+        name: 
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Enable and start Docker service
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Add user to Docker group
+      user:
+        name: "{{ ansible_user_id }}"
+        groups: docker
+        append: yes
+
+    - name: Download latest Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/latest/download/docker-compose-{{ ansible_system | lower }}-{{ ansible_architecture }}"
+        dest: "/usr/local/bin/docker-compose"
+        mode: 'u+x,g+x'
+
+    - name: Verify Docker installation
+      command: docker --version
+      register: docker_version_output
+      changed_when: false
+
+    - name: Show Docker version
+      debug:
+        msg: "{{ docker_version_output.stdout }}"
+
+    - name: Verify Docker Compose installation
+      command: docker-compose --version
+      register: compose_version_output
+      changed_when: false
+
+    - name: Show Docker Compose version
+      debug:
+        msg: "{{ compose_version_output.stdout }}"
